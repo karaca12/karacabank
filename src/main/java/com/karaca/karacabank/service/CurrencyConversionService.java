@@ -1,35 +1,37 @@
 package com.karaca.karacabank.service;
 
-import com.karaca.karacabank.constants.Currency;
+import com.karaca.karacabank.dto.ExchangeRatesResponse;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.karaca.karacabank.constants.Currency;
+import java.util.Map;
 
 @Service
 public class CurrencyConversionService {
-    public double convertCurrency(double amount, Currency sourceCurrency, Currency targetCurrency){
-        double exchangeRateUSDToTRY=27.0;
-        double exchangeRateUSDToEUR=1.1;
-        double exchangeRateTRYToUSD=0.037;
-        double exchangeRateTRYToEUR=30;
-        double exchangeRateEURToUSD=0.91;
-        double exchangeRateEURToTRY=0.33;
-        if(sourceCurrency==Currency.USD&&targetCurrency==Currency.TRY){
-            return amount*exchangeRateUSDToTRY;
-        }else if(sourceCurrency==Currency.USD&&targetCurrency==Currency.EUR){
-            return amount*exchangeRateUSDToEUR;
-        }
-        else if(sourceCurrency==Currency.TRY&&targetCurrency==Currency.USD){
-            return amount*exchangeRateTRYToUSD;
-        }
-        else if(sourceCurrency==Currency.TRY&&targetCurrency==Currency.EUR){
-            return amount*exchangeRateTRYToEUR;
-        }
-        else if(sourceCurrency==Currency.EUR&&targetCurrency==Currency.USD){
-            return amount*exchangeRateEURToUSD;
-        }
-        else if(sourceCurrency==Currency.EUR&&targetCurrency==Currency.TRY){
-            return amount*exchangeRateEURToTRY;
-        }else {
-            return amount;
-        }
+    private static final String API_BASE_URL = "http://api.exchangeratesapi.io/v1/latest";
+    private static final String ACCESS_KEY = "3dc6e3e53a63fa56d57d6fa7d78053a7";
+    private final RestTemplate restTemplate;
+    public CurrencyConversionService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
     }
+
+    public double convertCurrency(double amount, Currency sourceCurrency, Currency targetCurrency){
+        Map<String,Double> exchangeRates=fetchExchangeRates();
+        double exchangeRateSourceToBase=exchangeRates.get(sourceCurrency.toString());
+        double exchangeRateTargetToBase=exchangeRates.get(targetCurrency.toString());
+        if(exchangeRateSourceToBase==0||exchangeRateTargetToBase==0){
+            throw new RuntimeException("Exchange rates not available.");
+        }
+        double convertedAmountInBaseCurrency=amount/exchangeRateSourceToBase;
+        return convertedAmountInBaseCurrency*exchangeRateTargetToBase;
+    }
+
+    private Map<String, Double> fetchExchangeRates() throws RuntimeException {
+        String apiUrl=API_BASE_URL+"?access_key="+ACCESS_KEY+"&symbols=USD,EUR,TRY";
+        ExchangeRatesResponse response=restTemplate.getForObject(apiUrl,ExchangeRatesResponse.class);
+        if (response != null) return response.getRates();
+        else throw new RuntimeException("Exchange rates aren't present.");
+    }
+
 }

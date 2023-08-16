@@ -2,7 +2,6 @@ package com.karaca.karacabank.controller;
 
 import com.karaca.karacabank.model.Account;
 import com.karaca.karacabank.service.AccountService;
-import com.karaca.karacabank.service.CustomerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +10,7 @@ import java.util.List;
 @RestController
 @RequestMapping("accounts")
 public class AccountController {
-    final AccountService accountService;
+    private final AccountService accountService;
 
     public AccountController(AccountService accountService) {
         this.accountService = accountService;

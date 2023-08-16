@@ -10,7 +10,7 @@ import java.util.List;
 @RestController
 @RequestMapping("customers")
 public class CustomerController {
-    final CustomerService customerService;
+    private final CustomerService customerService;
 
     public CustomerController(CustomerService customerService) {
         this.customerService = customerService;
