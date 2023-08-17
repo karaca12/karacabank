@@ -35,7 +35,7 @@ public class AccountService {
         customer.getAccounts().add(accountRepository.save(account));
         customerRepository.save(customer);
 
-        accountEmailSender(account.getCustomer().getCustomerEmail(),
+        emailService.sendEmail(account.getCustomer().getCustomerEmail(),
                 "New Account",
                 "Dear "+account.getCustomer().getCustomerName()+",\n\n"+"Enjoy your new "
                         +account.getCurrency()+" "+account.getAccountType()+" account.\n\n"
@@ -52,7 +52,7 @@ public class AccountService {
         Account account=optionalAccount.get();
         account.setAccountBalance(updatedAccount.getAccountBalance());
 
-        accountEmailSender(account.getCustomer().getCustomerEmail(),
+        emailService.sendEmail(account.getCustomer().getCustomerEmail(),
                 "Account Updated",
                 "Dear "+account.getCustomer().getCustomerName()+",\n\n"+"Your account info has been updated."
                         +"If you are unaware of this change please contact us.\n\n"
@@ -67,7 +67,7 @@ public class AccountService {
             throw new AccountIdNotFoundException("Account with Id:"+accountId+" not found.");
         }
         Account account=optionalAccount.get();
-        accountEmailSender(account.getCustomer().getCustomerEmail(),
+        emailService.sendEmail(account.getCustomer().getCustomerEmail(),
                 "Account Deleted",
                 "Dear "+account.getCustomer().getCustomerName()+",\n\n"
                         + "Your account with ID: "+accountId+" has been deleted."
@@ -87,9 +87,5 @@ public class AccountService {
         }
         Account account=optionalAccount.get();
         return new ResponseEntity<>(account,HttpStatus.OK);
-    }
-
-    public void accountEmailSender(String customerEmail,String subject,String text){
-        emailService.sendEmail(customerEmail,subject,text);
     }
 }

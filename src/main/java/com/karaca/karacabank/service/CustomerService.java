@@ -1,6 +1,7 @@
 package com.karaca.karacabank.service;
 
 import com.karaca.karacabank.exception.CustomerIdNotFoundException;
+import com.karaca.karacabank.exception.InvalidEmailException;
 import com.karaca.karacabank.model.Customer;
 import com.karaca.karacabank.repo.AccountRepository;
 import com.karaca.karacabank.repo.CustomerRepository;
@@ -19,16 +20,22 @@ public class CustomerService {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
     private final EmailService emailService;
+    private final EmailValidationService emailValidationService;
 
-    public CustomerService(CustomerRepository customerRepository, AccountRepository accountRepository, TransactionRepository transactionRepository, EmailService emailService) {
+    public CustomerService(CustomerRepository customerRepository, AccountRepository accountRepository, TransactionRepository transactionRepository, EmailService emailService, EmailValidationService emailValidationService) {
         this.customerRepository = customerRepository;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.emailService = emailService;
+        this.emailValidationService = emailValidationService;
     }
 
     public ResponseEntity<Customer> createCustomer(Customer customer) {
-        customerEmailSender(customer.getCustomerEmail(),
+        String eMail=customer.getCustomerEmail();
+        boolean isValid=emailValidationService.validateEmail(eMail);
+
+        if(isValid){
+            emailService.sendEmail(customer.getCustomerEmail(),
                 "Welcome To Karacabank!",
                 "Dear " + customer.getCustomerName() + ",\n\n"
                         + "Welcome to KaracaBank! We're thrilled to have you on board.\n\n"
@@ -40,6 +47,9 @@ public class CustomerService {
                         + "Warm regards,\n\nKaracaBank Team"
         );
         return new ResponseEntity<>(customerRepository.save(customer), HttpStatus.CREATED);
+        }else {
+            throw new InvalidEmailException("Customer email not accepted.");
+        }
     }
 
     public ResponseEntity<Customer> updateCustomer(Integer customerId, Customer updatedCustomer) {
@@ -49,12 +59,18 @@ public class CustomerService {
         }
         Customer customer = optionalCustomer.get();
         customer=customerUpdater(customer,updatedCustomer);
-        customerEmailSender(customer.getCustomerEmail(),
-                "Account Deleted",
-                "Dear "+customer.getCustomerName()+",\n\n"
-                        + "Your personal information has been updated."
-                        +"If you are unaware of this change please contact us.\n\nKaracaBank Team");
-        return new ResponseEntity<>(customer, HttpStatus.OK);
+        String eMail=customer.getCustomerEmail();
+        boolean isValid=emailValidationService.validateEmail(eMail);
+        if(isValid) {
+            emailService.sendEmail(customer.getCustomerEmail(),
+                    "Account Deleted",
+                    "Dear " + customer.getCustomerName() + ",\n\n"
+                            + "Your personal information has been updated."
+                            + "If you are unaware of this change please contact us.\n\nKaracaBank Team");
+            return new ResponseEntity<>(customer, HttpStatus.OK);
+        }else {
+            throw new InvalidEmailException("Customer email not accepted.");
+        }
     }
 
     public ResponseEntity<List<Customer>> getAllCustomers() {
@@ -77,7 +93,7 @@ public class CustomerService {
             throw new CustomerIdNotFoundException("Customer with Id:" + customerId + " not found.");
         }
         Customer customer=optionalCustomer.get();
-        customerEmailSender(customer.getCustomerEmail(),
+        emailService.sendEmail(customer.getCustomerEmail(),
                 "Customer Deleted",
                 "Dear "+customer.getCustomerName()+",\n\n"
                         + "We are sorry to see you go. We hope to see you again!\n\n"
@@ -85,10 +101,6 @@ public class CustomerService {
         transactionRepository.deleteTransactionsByCustomerId(customerId);
         accountRepository.deleteAccountsByCustomerId(customerId);
         customerRepository.deleteById(customerId);
-    }
-
-    public void customerEmailSender(String customerEmail, String subject, String text) {
-        emailService.sendEmail(customerEmail, subject, text);
     }
 
     public Customer customerUpdater(Customer customer,Customer updatedCustomer){

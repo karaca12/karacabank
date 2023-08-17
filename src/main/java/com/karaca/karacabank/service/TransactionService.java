@@ -120,7 +120,7 @@ public class TransactionService {
         transaction.setTransactionDate(new Date());
         return transactionRepository.save(transaction);
     }
-    public void transactionEmailSender(Account account,TransactionType transactionType,double amount){
+    private void transactionEmailSender(Account account,TransactionType transactionType,double amount){
         DecimalFormat decimalFormat=new DecimalFormat("#.00");
         String formattedAmount= decimalFormat.format(amount);
         String customerEmail=account.getCustomer().getCustomerEmail();

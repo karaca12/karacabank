@@ -17,10 +17,18 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(InsufficientBalanceException.class)
     public ResponseEntity<String> handleInsufficientBalanceException(InsufficientBalanceException ex){
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(ex.getMessage());
     }
     @ExceptionHandler(SameIdsException.class)
     public ResponseEntity<String> handleSameIdsException(SameIdsException ex){
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<String> handleApiException(ApiException ex){
+        return ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body(ex.getMessage());
+    }
+    @ExceptionHandler(InvalidEmailException.class)
+    public ResponseEntity<String> handleInvalidEmailException(InvalidEmailException ex){
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(ex.getMessage());
     }
 }
