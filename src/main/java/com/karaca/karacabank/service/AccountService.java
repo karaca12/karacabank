@@ -17,12 +17,10 @@ import java.util.Optional;
 public class AccountService {
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
-    private final EmailService emailService;
 
-    public AccountService(AccountRepository accountRepository, CustomerRepository customerRepository, EmailService emailService) {
+    public AccountService(AccountRepository accountRepository, CustomerRepository customerRepository) {
         this.accountRepository = accountRepository;
         this.customerRepository = customerRepository;
-        this.emailService = emailService;
     }
 
     public ResponseEntity<Account> createAccountToCustomer(Integer customerId, Account account) {
@@ -34,13 +32,6 @@ public class AccountService {
         account.setCustomer(customer);
         customer.getAccounts().add(accountRepository.save(account));
         customerRepository.save(customer);
-
-        emailService.sendEmail(account.getCustomer().getCustomerEmail(),
-                "New Account",
-                "Dear "+account.getCustomer().getCustomerName()+",\n\n"+"Enjoy your new "
-                        +account.getCurrency()+" "+account.getAccountType()+" account.\n\n"
-                        +"Account ID: "+account.getAccountId()+"\n\nKaracaBank Team");
-
         return new ResponseEntity<>(account, HttpStatus.CREATED);
     }
 
@@ -51,28 +42,10 @@ public class AccountService {
         }
         Account account=optionalAccount.get();
         account.setAccountBalance(updatedAccount.getAccountBalance());
-
-        emailService.sendEmail(account.getCustomer().getCustomerEmail(),
-                "Account Updated",
-                "Dear "+account.getCustomer().getCustomerName()+",\n\n"+"Your account info has been updated."
-                        +"If you are unaware of this change please contact us.\n\n"
-                        +"Account ID: "+account.getAccountId()+"\n\nKaracaBank Team");
-
         return new ResponseEntity<>(account,HttpStatus.OK);
     }
 
     public void deleteAccountById(Integer accountId) {
-        Optional<Account> optionalAccount=accountRepository.findById(accountId);
-        if(optionalAccount.isEmpty()){
-            throw new AccountIdNotFoundException("Account with Id:"+accountId+" not found.");
-        }
-        Account account=optionalAccount.get();
-        emailService.sendEmail(account.getCustomer().getCustomerEmail(),
-                "Account Deleted",
-                "Dear "+account.getCustomer().getCustomerName()+",\n\n"
-                        + "Your account with ID: "+accountId+" has been deleted."
-                        +"If you are unaware of this change please contact us.\n\nKaracaBank Team");
-
         accountRepository.deleteById(accountId);
     }
 

@@ -13,7 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.text.DecimalFormat;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,13 +24,11 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final CurrencyConversionService currencyConversionService;
-    private final EmailService emailService;
 
-    public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository, CurrencyConversionService currencyConversionService, EmailService emailService) {
+    public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository, CurrencyConversionService currencyConversionService) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
         this.currencyConversionService = currencyConversionService;
-        this.emailService = emailService;
     }
 
     public ResponseEntity<Transaction> cashWithdrawalByAccountId(Integer accountId, AmountOfTransaction amountOfTransaction) {
@@ -49,8 +47,6 @@ public class TransactionService {
         Transaction transaction=new Transaction();
         transaction=saveTransaction(transaction,account,TransactionType.CASH_WITHDRAWAL,amount);
 
-        transactionEmailSender(account,TransactionType.CASH_WITHDRAWAL,amount);
-
         return new ResponseEntity<>(transaction, HttpStatus.OK);
 
     }
@@ -68,8 +64,6 @@ public class TransactionService {
 
         Transaction transaction=new Transaction();
         transaction=saveTransaction(transaction,account,TransactionType.CASH_DEPOSIT,amount);
-
-        transactionEmailSender(account,TransactionType.CASH_DEPOSIT,amount);
 
         return new ResponseEntity<>(transaction, HttpStatus.OK);
 
@@ -90,6 +84,9 @@ public class TransactionService {
         double amount=amountOfTransaction.getAmountOfTransaction();
         Account account1=optionalAccount1.get();
         Account account2=optionalAccount2.get();
+        if(account1.getAccountBalance() < amount){
+            throw new InsufficientBalanceException("Insufficient balance for transfer. Transaction canceled.");
+        }
         double convertedAmount=currencyConversionService.convertCurrency(amount,account1.getCurrency(),account2.getCurrency());
         double updatedBalance1=account1.getAccountBalance()-amount;
         double updatedBalance2=account2.getAccountBalance()+convertedAmount;
@@ -108,9 +105,6 @@ public class TransactionService {
         transactionMap.put("transaction1", transaction1);
         transactionMap.put("transaction2", transaction2);
 
-        transactionEmailSender(account1,TransactionType.CASH_TRANSFER_SENT,amount);
-        transactionEmailSender(account2,TransactionType.CASH_TRANSFER_RECEIVED,convertedAmount);
-
         return new ResponseEntity<>(transactionMap,HttpStatus.OK);
     }
     public Transaction saveTransaction(Transaction transaction,Account account,TransactionType transactionType,double amount){
@@ -119,16 +113,6 @@ public class TransactionService {
         transaction.setTransactionAmount(amount);
         transaction.setTransactionDate(new Date());
         return transactionRepository.save(transaction);
-    }
-    private void transactionEmailSender(Account account,TransactionType transactionType,double amount){
-        DecimalFormat decimalFormat=new DecimalFormat("#.00");
-        String formattedAmount= decimalFormat.format(amount);
-        String customerEmail=account.getCustomer().getCustomerEmail();
-        String subject="Transaction Done";
-        String text="Dear "+account.getCustomer().getCustomerName()+",\n\n"+"The transaction of "+formattedAmount
-                +" "+account.getCurrency()+" is done.\n\n"+transactionType+"\n\nAccount ID: "+account.getAccountId()
-                +"\n\nKaracaBank Team";
-        emailService.sendEmail(customerEmail,subject,text);
     }
 }
 
