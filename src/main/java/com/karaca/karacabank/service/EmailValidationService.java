@@ -14,7 +14,7 @@ import java.io.IOException;
 @Service
 public class EmailValidationService {
     private static final String API_HOST="mailcheck.p.rapidapi.com";
-    private static final String API_KEY="d8d8300fb1mshaa0b8bf9c71ddb3p110b18jsnc1d3996ce71e";
+    private static final String API_KEY="";
     public boolean validateEmail(String eMail){
         OkHttpClient client=new OkHttpClient();
         Request request=new Request.Builder()
