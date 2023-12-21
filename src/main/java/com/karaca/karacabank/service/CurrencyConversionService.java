@@ -10,7 +10,7 @@ import java.util.Map;
 @Service
 public class CurrencyConversionService {
     private static final String API_BASE_URL = "http://api.exchangeratesapi.io/v1/latest";
-    private static final String ACCESS_KEY = "bebe461ef523c5d7fde618482be66cd2";
+    private static final String ACCESS_KEY = "";
     private final RestTemplate restTemplate;
     public CurrencyConversionService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
